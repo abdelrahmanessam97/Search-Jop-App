@@ -84,7 +84,7 @@ export const signin = asyncHandler(async (req, res, next) => {
   const access_token = await generateToken({
     payload: { email, id: user._id },
     SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
-    option: { expiresIn: "1h" },
+    option: { expiresIn: "5d" },
   });
 
   const refresh_token = await generateToken({
@@ -141,7 +141,7 @@ export const loginWithGmail = asyncHandler(async (req, res, next) => {
   const access_token = await generateToken({
     payload: { id: user._id, email: user.email },
     SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
-    option: { expiresIn: "1h" },
+    option: { expiresIn: "5d" },
   });
 
   // get user
@@ -189,7 +189,7 @@ export const refreshToken = asyncHandler(async (req, res, next) => {
   const access_token = await generateToken({
     payload: { email: user.email, id: user._id },
     SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
-    option: { expiresIn: "1h" },
+    option: { expiresIn: "5d" },
   });
 
   return res.status(200).json({ message: "refresh token successfully", token: { access_token } });

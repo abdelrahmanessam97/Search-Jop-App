@@ -2,7 +2,8 @@ import { customAlphabet } from "nanoid";
 import { userModel } from "../../db/models/index.js";
 import { Compare, Encrypt, asyncHandler, deleteExpiredOTPs, eventEmitter, generateToken, verifyToken } from "./../../utils/index.js";
 import { loginTypes, roleTypes } from "../../db/utils/variables.js";
-import { OAuth2Client } from "google-auth-library";
+import fs from "fs";
+import cloudinary from "./../../utils/cloudnary/index.js";
 
 //------------------------------------------ updateUser ------------------------------------------------
 export const updateUser = asyncHandler(async (req, res, next) => {
@@ -32,22 +33,118 @@ export const getUserData = asyncHandler(async (req, res, next) => {
   res.json({ firstName: user.firstName, lastName: user.lastName, email: user.email, mobileNumber });
 });
 
-//------------------------------------------ loginWithGmail ------------------------------------------------
+//------------------------------------------ getUserProfile ------------------------------------------------
 
-export const loginWithGmail = asyncHandler(async (req, res, next) => {});
+export const getUserProfile = asyncHandler(async (req, res, next) => {
+  const user = await userModel.findById(req.params.id);
 
-//------------------------------------------ signin ------------------------------------------------
+  if (!user) return next(new Error("user not found", { cause: 404 }));
 
-export const signin = asyncHandler(async (req, res, next) => {});
+  const mobileNumber = await user.decryptedMobile;
 
-//------------------------------------------ refresh token ------------------------------------------------
+  res.json({
+    userName: `${user.firstName} ${user.lastName}`,
+    mobileNumber,
+    profilePic: user.profilePic,
+    coverPic: user.coverPic,
+  });
+});
 
-export const refreshToken = asyncHandler(async (req, res, next) => {});
+//------------------------------------------ updatePassword ------------------------------------------------
 
-//------------------------------------------ forgot password ------------------------------------------------
+export const updatePassword = asyncHandler(async (req, res, next) => {
+  const { oldPassword, newPassword } = req.body;
+  const user = await userModel.findById(req.user.id);
 
-export const forgotPassword = asyncHandler(async (req, res, next) => {});
+  if (!user) return next(new Error("user not found", { cause: 404 }));
 
-//------------------------------------------ reset Password ------------------------------------------------
+  const isMatch = await Compare({ key: oldPassword, hashedKey: user.password });
 
-export const resetPassword = asyncHandler(async (req, res, next) => {});
+  if (!isMatch) return next(new Error("old password is incorrect", { cause: 400 }));
+
+  user.password = newPassword;
+  await user.save();
+
+  res.json({ message: "Password updated successfully" });
+});
+
+//------------------------------------------ uploadProfilePic ------------------------------------------------
+
+export const uploadProfilePic = asyncHandler(async (req, res, next) => {
+  if (!req.file) return next(new Error("profile picture file not uploaded", { cause: 400 }));
+
+  // Upload to Cloudinary
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    folder: "profile_pictures",
+  });
+
+  // Delete the local file after upload
+  fs.unlinkSync(req.file.path);
+
+  // Update user profile picture in DB
+  await userModel.findByIdAndUpdate(req.user._id, {
+    profilePic: {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    },
+  });
+
+  res.status(200).json({
+    message: "Profile picture uploaded successfully",
+    profilePic: {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    },
+  });
+});
+
+//------------------------------------------ uploadCoverPic ------------------------------------------------
+
+export const uploadCoverPic = asyncHandler(async (req, res, next) => {
+  if (!req.file) return next(new Error("cover picture file not uploaded", { cause: 400 }));
+
+  const result = await cloudinary.uploader.upload(req.file.path, {
+    folder: "cover_pictures",
+  });
+
+  fs.unlinkSync(req.file.path);
+
+  await userModel.findByIdAndUpdate(req.user._id, {
+    coverPic: {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    },
+  });
+
+  res.status(200).json({
+    message: "Cover picture uploaded successfully",
+    coverPic: {
+      secure_url: result.secure_url,
+      public_id: result.public_id,
+    },
+  });
+});
+
+//------------------------------------------ deleteProfilePic------------------------------------------------
+
+export const deleteProfilePic = asyncHandler(async (req, res, next) => {
+  await userModel.findByIdAndUpdate(req.user.id, { profilePic: null });
+
+  res.json({ message: "Profile picture deleted" });
+});
+
+//------------------------------------------ deleteCoverPic------------------------------------------------
+
+export const deleteCoverPic = asyncHandler(async (req, res, next) => {
+  await userModel.findByIdAndUpdate(req.user.id, { coverPic: null });
+
+  res.json({ message: "Cover picture deleted" });
+});
+
+//------------------------------------------ softDeleteUser------------------------------------------------
+
+export const softDeleteUser = asyncHandler(async (req, res, next) => {
+  await userModel.findByIdAndUpdate(req.user.id, { deletedAt: new Date() });
+
+  res.json({ message: "Account marked for deletion" });
+});

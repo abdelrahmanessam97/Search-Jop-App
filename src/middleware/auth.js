@@ -1,4 +1,5 @@
 import { userModel } from "../db/models/index.js";
+import { verifyToken } from "../utils/index.js";
 import { asyncHandler } from "./../utils/error/index.js";
 import jwt from "jsonwebtoken";
 
@@ -24,7 +25,11 @@ export const authentication = asyncHandler(async (req, res, next) => {
   }
 
   // verify a token symmetric - synchronous
-  const decoded = jwt.verify(token, SIGNATURE_TOKEN);
+  const decoded = await verifyToken({ token, SIGNATURE: SIGNATURE_TOKEN });
+  console.log(prefix, token);
+  console.log(SIGNATURE_TOKEN);
+
+  console.log(decoded);
 
   if (!decoded?.id) {
     return next(new Error("token is invalid", { cause: 400 }));
