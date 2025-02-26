@@ -1,9 +1,7 @@
-import { customAlphabet } from "nanoid";
-import { userModel } from "../../db/models/index.js";
-import { Compare, Encrypt, asyncHandler, deleteExpiredOTPs, eventEmitter, generateToken, verifyToken } from "./../../utils/index.js";
-import { loginTypes, roleTypes } from "../../db/utils/variables.js";
 import fs from "fs";
+import { userModel } from "../../db/models/index.js";
 import cloudinary from "./../../utils/cloudnary/index.js";
+import { Compare, Encrypt, asyncHandler } from "./../../utils/index.js";
 
 //------------------------------------------ updateUser ------------------------------------------------
 export const updateUser = asyncHandler(async (req, res, next) => {
@@ -20,7 +18,7 @@ export const updateUser = asyncHandler(async (req, res, next) => {
 
   const updatedUser = await userModel.findByIdAndUpdate(userId, updatedFields, { new: true });
 
-  res.json({ message: "User updated", user: updatedUser });
+  res.status(200).json({ message: "User updated", user: updatedUser });
 });
 
 //------------------------------------------ getUserData ------------------------------------------------
@@ -30,7 +28,7 @@ export const getUserData = asyncHandler(async (req, res, next) => {
   // Await decryptedMobile if it's an async function
   const mobileNumber = await user.decryptedMobile;
 
-  res.json({ firstName: user.firstName, lastName: user.lastName, email: user.email, mobileNumber });
+  res.status(200).json({ firstName: user.firstName, lastName: user.lastName, email: user.email, mobileNumber });
 });
 
 //------------------------------------------ getUserProfile ------------------------------------------------
@@ -42,7 +40,7 @@ export const getUserProfile = asyncHandler(async (req, res, next) => {
 
   const mobileNumber = await user.decryptedMobile;
 
-  res.json({
+  res.status(200).json({
     userName: `${user.firstName} ${user.lastName}`,
     mobileNumber,
     profilePic: user.profilePic,
@@ -65,13 +63,13 @@ export const updatePassword = asyncHandler(async (req, res, next) => {
   user.password = newPassword;
   await user.save();
 
-  res.json({ message: "Password updated successfully" });
+  res.status(200).json({ message: "Password updated successfully" });
 });
 
 //------------------------------------------ uploadProfilePic ------------------------------------------------
 
 export const uploadProfilePic = asyncHandler(async (req, res, next) => {
-  if (!req.file) return next(new Error("profile picture file not uploaded", { cause: 400 }));
+  // if (!req.file) return next(new Error("profile picture file not uploaded", { cause: 400 }));
 
   // Upload to Cloudinary
   const result = await cloudinary.uploader.upload(req.file.path, {
@@ -130,7 +128,7 @@ export const uploadCoverPic = asyncHandler(async (req, res, next) => {
 export const deleteProfilePic = asyncHandler(async (req, res, next) => {
   await userModel.findByIdAndUpdate(req.user.id, { profilePic: null });
 
-  res.json({ message: "Profile picture deleted" });
+  res.status(200).json({ message: "Profile picture deleted" });
 });
 
 //------------------------------------------ deleteCoverPic------------------------------------------------
@@ -138,7 +136,7 @@ export const deleteProfilePic = asyncHandler(async (req, res, next) => {
 export const deleteCoverPic = asyncHandler(async (req, res, next) => {
   await userModel.findByIdAndUpdate(req.user.id, { coverPic: null });
 
-  res.json({ message: "Cover picture deleted" });
+  res.status(200).json({ message: "Cover picture deleted" });
 });
 
 //------------------------------------------ softDeleteUser------------------------------------------------
@@ -146,5 +144,5 @@ export const deleteCoverPic = asyncHandler(async (req, res, next) => {
 export const softDeleteUser = asyncHandler(async (req, res, next) => {
   await userModel.findByIdAndUpdate(req.user.id, { deletedAt: new Date() });
 
-  res.json({ message: "Account marked for deletion" });
+  return res.status(200).json({ message: "Account marked for deletion" });
 });
