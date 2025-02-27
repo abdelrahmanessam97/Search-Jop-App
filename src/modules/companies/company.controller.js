@@ -8,30 +8,30 @@ import { fileTypes, multerHost, multerLocal } from "../../middleware/multer.js";
 const companyRouter = Router();
 
 // Add a new company (Only authenticated users)
-companyRouter.post("/addCompany", authentication, US.addCompany);
+companyRouter.post("/addCompany", authentication, validation(UV.addCompanySchema), US.addCompany);
 
 // // Update company (Only owner)
-companyRouter.patch("/updateCompany/:companyId", authentication, US.updateCompany);
+companyRouter.patch("/updateCompany/:companyId", authentication, validation(UV.updateCompanySchema), US.updateCompany);
 
 // Soft delete company (Only admin or owner)
-companyRouter.delete("/deleteCompany/:companyId", authentication, authorization(["Admin", "Owner"]), US.deleteCompany);
+companyRouter.delete("/deleteCompany/:companyId", authentication, validation(UV.deleteCompanySchema), authorization(["Admin", "Owner"]), US.deleteCompany);
 
 // Get company with related jobs
-companyRouter.get("/getCompanyWithJobs/:companyId", US.getCompanyWithJobs);
+companyRouter.get("/getCompanyWithJobs/:companyId", validation(UV.getCompanyWithJobsSchema), US.getCompanyWithJobs);
 
 // Search for a company by name
-companyRouter.get("/searchCompany/:name", US.searchCompany);
+companyRouter.get("/searchCompany/:name", validation(UV.searchCompanySchema), US.searchCompany);
 
 // Upload Company Logo
-companyRouter.post("/upload-logo/:companyId", authentication, multerHost(fileTypes.image).single("logo"), US.uploadCompanyLogo);
+companyRouter.post("/upload-logo/:companyId", authentication, validation(UV.uploadCompanyLogoSchema), multerHost(fileTypes.image).single("logo"), US.uploadCompanyLogo);
 
 // Upload Company Cover Pic
-companyRouter.post("/upload-cover/:companyId", authentication, multerHost(fileTypes.image).single("coverPic"), US.uploadCompanyCover);
+companyRouter.post("/upload-cover/:companyId", authentication, validation(UV.uploadCompanyCoverSchema), multerHost(fileTypes.image).single("coverPic"), US.uploadCompanyCover);
 
 // Delete Company Logo
-companyRouter.delete("/delete-logo/:companyId", authentication, US.deleteCompanyLogo);
+companyRouter.delete("/delete-logo/:companyId", authentication, validation(UV.deleteCompanyLogoSchema), US.deleteCompanyLogo);
 
 // Delete Company Cover Pic
-companyRouter.delete("/delete-cover/:companyId", authentication, US.deleteCompanyCover);
+companyRouter.delete("/delete-cover/:companyId", authentication, validation(UV.deleteCompanyCoverSchema), US.deleteCompanyCover);
 
 export default companyRouter;
