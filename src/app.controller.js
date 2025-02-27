@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import cors from "cors";
 import authRouter from "./modules/auth/auth.controller.js";
+import companyRouter from "./modules/companies/company.controller.js";
 
 const bootstrap = async (app, express) => {
   app.use(helmet());
@@ -22,6 +23,7 @@ const bootstrap = async (app, express) => {
 
   app.use("/api/auth", authRouter);
   app.use("/api/users", userRouter);
+  app.use("/api/companies", companyRouter);
 
   // error handling middleware
   app.use("*", (req, res, next) => {

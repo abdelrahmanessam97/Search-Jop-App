@@ -126,7 +126,7 @@ export const uploadCoverPic = asyncHandler(async (req, res, next) => {
 //------------------------------------------ deleteProfilePic------------------------------------------------
 
 export const deleteProfilePic = asyncHandler(async (req, res, next) => {
-  await userModel.findByIdAndUpdate(req.user.id, { profilePic: null });
+  await userModel.findByIdAndUpdate(req.user.id, { profilePic: undefined });
 
   res.status(200).json({ message: "Profile picture deleted" });
 });
@@ -134,7 +134,7 @@ export const deleteProfilePic = asyncHandler(async (req, res, next) => {
 //------------------------------------------ deleteCoverPic------------------------------------------------
 
 export const deleteCoverPic = asyncHandler(async (req, res, next) => {
-  await userModel.findByIdAndUpdate(req.user.id, { coverPic: null });
+  await userModel.findByIdAndUpdate(req.user.id, { coverPic: undefined });
 
   res.status(200).json({ message: "Cover picture deleted" });
 });
