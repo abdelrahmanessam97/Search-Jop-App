@@ -20,12 +20,17 @@ export const authentication = asyncHandler(async (req, res, next) => {
     SIGNATURE_TOKEN = process.env.SIGNATURE_TOKEN_USER;
   } else if (prefix === process.env.PREFIX_TOKEN_ADMIN) {
     SIGNATURE_TOKEN = process.env.SIGNATURE_TOKEN_ADMIN;
+  } else if (prefix === process.env.PREFIX_TOKEN_HR) {
+    SIGNATURE_TOKEN = process.env.SIGNATURE_TOKEN_HR;
+  } else if (prefix === process.env.PREFIX_TOKEN_OWNER) {
+    SIGNATURE_TOKEN = process.env.SIGNATURE_TOKEN_OWNER;
   } else {
     return next(new Error("prefix is invalid", { cause: 400 }));
   }
 
   // verify a token symmetric - synchronous
   const decoded = await verifyToken({ token, SIGNATURE: SIGNATURE_TOKEN });
+  console.log(decoded);
 
   if (!decoded?.id) {
     return next(new Error("token is invalid", { cause: 400 }));

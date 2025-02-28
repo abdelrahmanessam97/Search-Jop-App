@@ -6,6 +6,8 @@ export const genderTypes = {
 export const roleTypes = {
   User: "User",
   Admin: "Admin",
+  Hr: "Hr",
+  Owner: "Owner",
 };
 
 export const loginTypes = ["google", "system"];

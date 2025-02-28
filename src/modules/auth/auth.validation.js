@@ -15,7 +15,7 @@ export const signupSchema = joi
       .required(),
     gender: joi.string().valid(genderTypes.Male, genderTypes.Female).required(),
     DOB: joi.date().required(),
-    role: joi.string().valid(roleTypes.User, roleTypes.Admin).required(),
+    role: joi.string().valid(roleTypes.User, roleTypes.Admin, roleTypes.Hr, roleTypes.Owner).required(),
   })
   .required();
 

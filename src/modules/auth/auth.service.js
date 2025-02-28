@@ -83,13 +83,31 @@ export const signin = asyncHandler(async (req, res, next) => {
   // generate token
   const access_token = await generateToken({
     payload: { email, id: user._id },
-    SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
+    SIGNATURE:
+      user.role === roleTypes.User
+        ? process.env.SIGNATURE_TOKEN_USER
+        : user.role === roleTypes.Admin
+        ? process.env.SIGNATURE_TOKEN_ADMIN
+        : user.role === roleTypes.Hr
+        ? process.env.SIGNATURE_TOKEN_HR
+        : user.role === roleTypes.Owner
+        ? process.env.SIGNATURE_TOKEN_OWNER
+        : null,
     option: { expiresIn: "5d" },
   });
 
   const refresh_token = await generateToken({
     payload: { email, id: user._id },
-    SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
+    SIGNATURE:
+      user.role === roleTypes.User
+        ? process.env.SIGNATURE_TOKEN_USER
+        : user.role === roleTypes.Admin
+        ? process.env.SIGNATURE_TOKEN_ADMIN
+        : user.role === roleTypes.Hr
+        ? process.env.SIGNATURE_TOKEN_HR
+        : user.role === roleTypes.Owner
+        ? process.env.SIGNATURE_TOKEN_OWNER
+        : null,
     option: { expiresIn: "7d" },
   });
 
@@ -140,7 +158,16 @@ export const loginWithGmail = asyncHandler(async (req, res, next) => {
   // generate token
   const access_token = await generateToken({
     payload: { id: user._id, email: user.email },
-    SIGNATURE: user.role == roleTypes.User ? process.env.SIGNATURE_TOKEN_USER : process.env.SIGNATURE_TOKEN_ADMIN,
+    SIGNATURE:
+      user.role === roleTypes.User
+        ? process.env.SIGNATURE_TOKEN_USER
+        : user.role === roleTypes.Admin
+        ? process.env.SIGNATURE_TOKEN_ADMIN
+        : user.role === roleTypes.Hr
+        ? process.env.SIGNATURE_TOKEN_HR
+        : user.role === roleTypes.Owner
+        ? process.env.SIGNATURE_TOKEN_OWNER
+        : null,
     option: { expiresIn: "5d" },
   });
 

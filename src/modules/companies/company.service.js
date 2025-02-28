@@ -20,6 +20,7 @@ export const addCompany = asyncHandler(async (req, res, next) => {
     address,
     numberOfEmployees,
     createdBy: req.user._id,
+    HRs: req.user._id,
   });
 
   res.status(201).json({ message: "Company created successfully", company: newCompany });
@@ -138,8 +139,7 @@ export const deleteCompanyLogo = asyncHandler(async (req, res, next) => {
 export const deleteCompanyCover = asyncHandler(async (req, res, next) => {
   const { companyId } = req.params;
 
-  const company = await companyModel.findOne({ _id: companyId, deletedAt: null });
-
+  const company = await companyModel.findById(companyId);
   if (!company) return next(new Error("Company not found", { cause: 404 }));
 
   if (company.coverPic?.public_id) await cloudinary.uploader.destroy(company.coverPic.public_id);

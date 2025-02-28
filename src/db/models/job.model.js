@@ -4,11 +4,12 @@ import { jobLocations, jobTypes, seniorityLevels } from "../utils/variables.js";
 const jobSchema = new mongoose.Schema(
   {
     jobTitle: { type: String, required: true },
-    jobLocation: { type: String, enum: jobLocations, required: true },
-    workingTime: { type: String, enum: jobTypes, required: true },
+    jobLocation: { type: String, enum: jobLocations, default: jobLocations[0], required: true },
+    workingTime: { type: String, enum: jobTypes, default: jobTypes[0], required: true },
     seniorityLevel: {
       type: String,
       enum: seniorityLevels,
+      default: seniorityLevels[0],
       required: true,
     },
     jobDescription: { type: String, required: true },
