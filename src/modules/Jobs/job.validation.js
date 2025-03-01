@@ -2,25 +2,54 @@ import joi from "joi";
 import { generalsRules } from "../../utils/index.js";
 import { genderTypes, roleTypes } from "../../db/utils/variables.js";
 
-export const addCompanySchema = joi
+export const addJobSchema = joi
   .object({
-    companyName: joi.string().min(3).max(30).required(),
-    companyEmail: generalsRules.email.required(),
-    address: joi.string().required(),
-    description: joi.string().required(),
-    industry: joi.string().required(),
-    numberOfEmployees: joi.string().required(),
+    companyId: generalsRules.id,
+    jobTitle: joi.string().required(),
+    jobLocation: joi.string().required(),
+    workingTime: joi.string().required(),
+    seniorityLevel: joi.string().required(),
+    jobDescription: joi.string().required(),
+    technicalSkills: joi.array().required(),
+    softSkills: joi.array().required(),
   })
   .required();
 
-export const updateCompanySchema = joi
+export const updateJobSchema = joi
   .object({
-    companyName: joi.string().min(3).max(30),
-    companyEmail: generalsRules.email,
-    address: joi.string(),
-    description: joi.string(),
-    industry: joi.string(),
-    numberOfEmployees: joi.string(),
+    jobId: generalsRules.id,
+    jobTitle: joi.string().required(),
+    jobLocation: joi.string().required(),
+    workingTime: joi.string().required(),
+    seniorityLevel: joi.string().required(),
+    jobDescription: joi.string().required(),
+    technicalSkills: joi.array().required(),
+    softSkills: joi.array().required(),
+  })
+  .required();
+
+export const getJobApplicationsSchema = joi
+  .object({
+    jobId: generalsRules.id,
+  })
+  .required();
+
+export const deleteJobSchema = joi
+  .object({
+    jobId: generalsRules.id,
+  })
+  .required();
+
+export const getJobsByCompanySchema = joi
+  .object({
     companyId: generalsRules.id,
   })
   .required();
+
+export const acceptOrRejectApplicantSchema = joi
+  .object({
+    applicationId: generalsRules.id,
+    status: joi.string().required(),
+  })
+  .required();
+

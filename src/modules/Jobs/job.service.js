@@ -1,7 +1,7 @@
-import { asyncHandler } from "../../utils/index.js";
-import { companyModel, jobModel } from "../../db/models/index.js";
-import fs from "fs";
+import { applicationModel, companyModel, jobModel } from "../../db/models/index.js";
+import { sendEmail } from "../../service/sendEmail.js";
 import cloudinary from "../../utils/cloudnary/index.js";
+import { asyncHandler } from "../../utils/index.js";
 
 //------------------------------------------ addJob ------------------------------------------------
 export const addJob = asyncHandler(async (req, res, next) => {
@@ -9,10 +9,10 @@ export const addJob = asyncHandler(async (req, res, next) => {
   const { jobTitle, jobLocation, workingTime, seniorityLevel, jobDescription, technicalSkills, softSkills } = req.body;
 
   const company = await companyModel.findById(companyId);
-  if (!company) return res.status(404).json({ message: "Company not found" });
+  if (!company) return next(new Error("Company not found", { cause: 404 }));
 
   if (!company.createdBy.equals(req.user._id) && !company.HRs.includes(req.user._id)) {
-    return res.status(403).json({ message: "Unauthorized" });
+    return next(new Error("Unauthorized", { cause: 403 }));
   }
 
   const job = await jobModel.create({
@@ -35,10 +35,10 @@ export const updateJob = asyncHandler(async (req, res, next) => {
   const { jobId } = req.params;
 
   const job = await jobModel.findById(jobId);
-  if (!job) return res.status(404).json({ message: "Job not found" });
+  if (!job) return next(new Error("Job not found"), { cause: 404 });
 
   if (!job.addedBy.equals(req.user._id)) {
-    return res.status(403).json({ message: "Unauthorized" });
+    return next(new Error("Unauthorized"), { cause: 403 });
   }
 
   const updatedJob = await jobModel.findByIdAndUpdate(jobId, req.body, { new: true });
@@ -50,13 +50,13 @@ export const updateJob = asyncHandler(async (req, res, next) => {
 export const deleteJob = asyncHandler(async (req, res, next) => {
   const { jobId } = req.params;
   const job = await jobModel.findById(jobId);
-  if (!job) return res.status(404).json({ message: "Job not found" });
+  if (!job) return next(new Error("Job not found"), { cause: 404 });
 
   const company = await companyModel.findById(job.companyId);
-  if (!company) return res.status(404).json({ message: "Company not found" });
+  if (!company) return next(new Error("Company not found"), { cause: 404 });
 
   if (!company.HRs.includes(req.user._id)) {
-    return res.status(403).json({ message: "Unauthorized" });
+    return next(new Error("Unauthorized"), { cause: 403 });
   }
 
   await jobModel.findByIdAndDelete(jobId);
@@ -70,7 +70,7 @@ export const getJobs = asyncHandler(async (req, res, next) => {
 
   if (companyName) {
     const company = await companyModel.findOne({ companyName: new RegExp(companyName, "i") });
-    if (!company) return res.status(404).json({ message: "Company not found" });
+    if (!company) return next(new Error("Company not found", { cause: 404 }));
     filter.companyId = company._id;
   }
 
@@ -88,17 +88,12 @@ export const getJobs = asyncHandler(async (req, res, next) => {
 //------------------------------------------ getJobsByCompany ------------------------------------------------
 export const getJobsByCompany = asyncHandler(async (req, res, next) => {
   const { companyId } = req.params;
-  const { page = 1, limit = 10, sort = "-createdAt" } = req.query;
 
   const totalJobs = await jobModel.countDocuments({ companyId });
-  const jobs = await jobModel
-    .find({ companyId })
-    .populate("companyId", "companyName")
-    .sort(sort)
-    .skip((page - 1) * limit)
-    .limit(Number(limit));
 
-  res.status(200).json({ totalJobs, page, limit, jobs });
+  const jobs = await jobModel.find({ companyId }).populate("companyId", "companyName");
+
+  res.status(200).json({ totalJobs, jobs });
 });
 
 //------------------------------------------ getFilteredJobs ------------------------------------------------
@@ -127,7 +122,7 @@ export const getFilteredJobs = asyncHandler(async (req, res, next) => {
 export const getJobApplications = asyncHandler(async (req, res, next) => {
   const { jobId } = req.params;
   const job = await jobModel.findById(jobId);
-  if (!job) return res.status(404).json({ message: "Job not found" });
+  if (!job) return next(new Error("Job not found"));
 
   const applications = await applicationModel.find({ jobId }).populate("userId", "-password");
 
@@ -136,44 +131,59 @@ export const getJobApplications = asyncHandler(async (req, res, next) => {
 
 //------------------------------------------ applyToJob ------------------------------------------------
 export const applyToJob = asyncHandler(async (req, res, next) => {
-  const { jobId } = req.params;
-  const { userCV } = req.body;
+  if (!req.file) {
+    return next(new Error("No file uploaded"));
+  }
 
-  const job = await jobModel.findById(jobId);
-  if (!job) return res.status(404).json({ message: "Job not found" });
+  // Upload CV to Cloudinary
+  const uploadedCV = await cloudinary.uploader.upload(req.file.path, {
+    folder: "jobApplications",
+    resource_type: "auto",
+  });
 
-  const existingApplication = await applicationModel.findOne({ jobId, userId: req.user._id });
-  if (existingApplication) return res.status(400).json({ message: "You already applied" });
+  const newApplication = await applicationModel.create({
+    jobId: req.params.jobId,
+    userId: req.user._id,
+    userCV: {
+      secure_url: uploadedCV.secure_url,
+      public_id: uploadedCV.public_id,
+    },
+  });
 
-  const newApplication = await applicationModel.create({ jobId, userId: req.user._id, userCV });
-
-  io.emit("newApplication", { jobId, message: "New job application received" });
-
-  res.status(201).json({ message: "Applied successfully", application: newApplication });
+  res.status(201).json({ message: "Application submitted successfully", application: newApplication });
 });
 
 //------------------------------------------ acceptOrRejectApplicant ------------------------------------------------
 export const acceptOrRejectApplicant = asyncHandler(async (req, res, next) => {
-  const { jobId, applicationId } = req.params;
+  const { applicationId } = req.params;
   const { status } = req.body;
 
-  if (!["accepted", "rejected"].includes(status)) return res.status(400).json({ message: "Invalid status" });
-
-  const job = await jobModel.findById(jobId);
-  if (!job) return res.status(404).json({ message: "Job not found" });
-
   const application = await applicationModel.findById(applicationId).populate("userId");
-  if (!application) return res.status(404).json({ message: "Application not found" });
 
+  if (!application) {
+    return res.status(404).json({ error: "Application not found" });
+  }
+
+  // Update status
   application.status = status;
   await application.save();
 
+  // Prepare email details
+  const userEmail = application.userId.email;
+  let subject, htmlContent;
+
   if (status === "accepted") {
-    // Send acceptance email (Assuming sendEmail function exists)
-    sendEmail(application.userId.email, "Application Accepted", "Congratulations! You have been accepted.");
+    subject = "Application Accepted";
+    htmlContent = `<p>Congratulations! Your job application has been accepted.</p>`;
+  } else if (status === "rejected") {
+    subject = "Application Rejected";
+    htmlContent = `<p>We regret to inform you that your application was not selected.</p>`;
   } else {
-    sendEmail(application.userId.email, "Application Rejected", "We regret to inform you that your application has been rejected.");
+    return res.status(400).json({ error: "Invalid status" });
   }
 
-  res.status(200).json({ message: `Application ${status}` });
+  // Send email notification
+  await sendEmail(userEmail, subject, htmlContent);
+
+  res.status(200).json({ message: `Application ${status} successfully`, application });
 });

@@ -62,6 +62,9 @@ export const authentication = asyncHandler(async (req, res, next) => {
 export const authorization = (accessRoles = []) => {
   return asyncHandler((req, res, next) => {
     const { role } = req?.user;
+    console.log("User Role:", role);
+    console.log("Allowed Roles:", accessRoles);
+    console.log("Access Granted:", accessRoles.includes(role));
 
     if (!accessRoles.includes(role)) {
       return next(new Error("you are not authorized", { cause: 400 }));

@@ -13,7 +13,7 @@ export const asyncHandler = (fn) => {
 
 export const globalErrorHandler = (err, req, res, next) => {
   if (res.headersSent) {
-    return res.status(err["cause"] || 500).json(err);
+    return res.status(err["cause"] || 500).json({ message: err.message, stack: err.stack, error: err });
   }
 
   if (process.env.MODE === "DEV") {
