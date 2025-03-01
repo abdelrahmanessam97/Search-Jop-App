@@ -8,6 +8,8 @@ import authRouter from "./modules/auth/auth.controller.js";
 import companyRouter from "./modules/companies/company.controller.js";
 import jobRouter from "./modules/Jobs/job.controller.js";
 import chatRouter from "./modules/chats/chat.controller.js";
+import { createHandler } from "graphql-http/lib/use/express";
+import { schema } from "./modules/graphql/graphql.schema.js";
 
 const bootstrap = async (app, express) => {
   app.use(helmet());
@@ -26,6 +28,7 @@ const bootstrap = async (app, express) => {
   app.use("/api/auth", authRouter);
   app.use("/api/users", userRouter);
   app.use("/api/companies", companyRouter);
+  app.use("/api/graphql", createHandler({ schema }));
   app.use("/api/jobs", jobRouter);
   app.use("/api/chats", chatRouter);
 
